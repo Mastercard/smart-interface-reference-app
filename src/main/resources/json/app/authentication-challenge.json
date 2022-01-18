@@ -1,0 +1,113 @@
+{
+  "threeDSServerTransID": "${#threeDSServerTransID}",
+  "threeDSRequestorAuthenticationInd": "01",
+  "threeDSRequestorAuthenticationInfo": {
+    "threeDSReqAuthMethod": "02",
+    "threeDSReqAuthTimestamp": "201711071307",
+    "threeDSReqAuthData": "validlogin at UL TS BV"
+  },
+  "threeDSRequestorChallengeInd": "01",
+  "threeDSRequestorID": "MC123456789",
+  "threeDSRequestorName": "Mastercard 3DS Requestor",
+  "threeDSRequestorPriorAuthenticationInfo": {
+    "threeDSReqPriorRef": "d7c1ee99-9478-44a6-b1f2-391e29c6b340",
+    "threeDSReqPriorAuthMethod": "02",
+    "threeDSReqPriorAuthTimestamp": "201710282113",
+    "threeDSReqPriorAuthData": "cKTYtrvvKU7gUoiqbbO7Po"
+  },
+  "threeDSRequestorURL": "http://www.merchant.com",
+  "acctType": "01",
+  "acquirerBIN": "444444",
+  "acquirerMerchantID": "ACME",
+  "addrMatch": "Y",
+  "acctInfo": {
+    "chAccAgeInd": "03",
+    "chAccChange": "20160712",
+    "chAccChangeInd": "04",
+    "chAccDate": "20140328",
+    "chAccPwChangeInd": "02",
+    "chAccPwChange": "20170328",
+    "nbPurchaseAccount": "11",
+    "provisionAttemptsDay": "0",
+    "txnActivityDay": "1",
+    "txnActivityYear": "21",
+    "paymentAccAge": "20160917",
+    "paymentAccInd": "04",
+    "shipAddressUsage": "20160714",
+    "shipAddressUsageInd": "04",
+    "shipNameIndicator": "02",
+    "suspiciousAccActivity": "01"
+  },
+  "billAddrCity": "Anytown",
+  "billAddrCountry": "840",
+  "billAddrLine1": "123MainStreet",
+  "billAddrLine2": "P.O.Box555454",
+  "billAddrLine3": "Bill Address",
+  "billAddrPostCode": "63368",
+  "billAddrState": "MO",
+  "email": "johndoe@email.com",
+  "homePhone": {
+    "cc": "1",
+    "subscriber": "1234567899"
+  },
+  "mobilePhone": {
+    "cc": "1",
+    "subscriber": "1234567899"
+  },
+  "cardholderName": "JohnDoe",
+  "shipAddrCity": "Anytown",
+  "shipAddrCountry": "840",
+  "shipAddrLine1": "123MainStreet",
+  "shipAddrLine2": "P.O.Box555454",
+  "shipAddrLine3": "Bill Address",
+  "shipAddrPostCode": "63368",
+  "shipAddrState": "MO",
+  "workPhone": {
+    "cc": "1",
+    "subscriber": "1234567899"
+  },
+  "acctID": "personal account",
+  "deviceChannel": "01",
+  "deviceRenderOptions": {
+    "sdkInterface": "01",
+    "sdkUiType": [
+      "01",
+      "02",
+      "03"
+    ]
+  },
+  "mcc": "0001",
+  "merchantCountryCode": "840",
+  "merchantName": "JohnSmith",
+  "merchantRiskIndicator": {
+    "shipIndicator": "02",
+    "deliveryTimeframe": "01",
+    "deliveryEmailAddress": "deliver@email.com",
+    "reorderItemsInd": "01",
+    "preOrderPurchaseInd": "02",
+    "preOrderDate": "20170519",
+    "giftCardAmount": "337",
+    "giftCardCurr": "840",
+    "giftCardCount": "02"
+  },
+  "messageCategory": "01",
+  "purchaseAmount": "123456789123",
+  "purchaseCurrency": "840",
+  "purchaseExponent": "2",
+  "purchaseDate": "20160101000001",
+  "recurringExpiry": "20200202",
+  "recurringFrequency": "0004",
+  "sdkAppID": "d12345e0-67f3-23e5-a151-feff891cdc9f",
+  "sdkEncData": "eyJhbGciOiJSU0EtT0FFUC0yNTYiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiMmY1ZmE2NGE2NTU2OGVhODk2NDY1M2MzM2Q3YTE2MDMifQ.n323u_F0VIL_6YkSPuNr-ZvwEo5Rc916_jeoOUGU2AfGeGI91pehT5j4cohsWNDvmZQR_KXCt5YFYuDrJr3PeqsqAlJktsOSli5Kq1yKjLYrLpgiCbkSdHBFMsbHK-mSN87yztmVEkhGi6LiZiMvgP3EEPySk_LN8fnjGgpSkGr4IG4oALIZKCTNlyKrbE-PeHrReSNtBGKg3NxAcjQVMUjAi6x_qrSuTsb9Wyssa92z6ABpMTWHuBqdSE6n9EgYDqNRgqOj30japLMNR1cGeHm_opiCRRJWJQplpOAe7mByVrgoBnAIrUXhBZ8haBclJ96hbvmrlCKiRHVmGl3frg.c1SdE2azR9o9S1Uabh73Dw.FtpTSbMzDWNjwtDNyQuKFmu3JT16JXFxgFW2zKzuZXOqJXKpJGgtDyyXkZzN5unKdhytA1fZvMjQBXQmhWZslAA001z3l0vxqC9LpzgQja8MIT-HW1s357NMW-XOXoUSWFDqTfxzC0407LhTGtA__uZRyAixFHFPqruejDbXzRfPhDtY_RpjSIZaWmTcc9til2FhrQdHxm9LSkd8cDMYkvfBoTf6af6V1RZweI-qaOGrdqMWaCMbprjPsf9f88JvOoDCKxWuU_wwHFVytvqGupFV1pAndeY_C98eEpkEXuZ2ZATIiVWFabQ3Ex3aRy1B2aHiWgV7sF_XHrK2tXzDsAdg6okWxNm-BCqVYtKnPFI.vwu2qSqVcWv9wwvQau069A",
+  "sdkEphemPubKey": {
+    "kty": "EC",
+    "crv": "P-256",
+    "x": "WWcpTjbOqiu_1aODllw5rYTq5oLXE_T0huCPjMIRbkI",
+    "y": "Wz_7anIeadV8SJZUfr4drwjzuWoUbOsHp5GdRZBAAiw"
+  },
+  "sdkMaxTimeout": "06",
+  "sdkReferenceNumber": "3DS_LOA_SDK_PPFU_020100_00007",
+  "sdkTransID": "d12345e0-67f3-23e5-a151-feff891cdc9f",
+  "transType": "01",
+  "cardExpiryDate": "2002"
+}

@@ -1,0 +1,18 @@
+spring:
+  jackson:
+    default-property-inclusion: non_null
+
+si:
+  base-path: https://mtf.miserver.mastercard.com/mtf/3ds/miserver/requestor
+  logging:
+    pattern:
+      console: '%d{HH:mm:ss.SSS} [%level] %msg%n'
+
+  auth:
+    keyStore:
+    keyStore-password:
+
+app:
+  encryption:
+    cert:
+    enabled: false

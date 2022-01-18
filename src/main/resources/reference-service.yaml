@@ -1,0 +1,1367 @@
+openapi: 3.0.3
+info:
+  title: 3DS Smart Interface API
+  description: "Set of APIs providing 3DS Server Authentication, Authentication Results, and ACS Supported Versions capabilities."
+  termsOfService: http://mastercard.com/terms
+  contact:
+    name: API Support
+    email: apisupport@mastercard.com
+    url: https://developer.mastercard.com/support
+  version: 18.0.0
+servers:
+  - url: https://api.identity.mastercard.com/3ds/miserver/requestor/
+    description: "Production URL"
+  - url: https://mtf.api.identity.mastercard.com/mtf/3ds/miserver/requestor/
+    description: "MTF URL"
+tags:
+  - name: Authentication
+    description: "Provides a channel for the requestor to initiate an authentication transaction and receive a response based on the
+      ARes 3DS 2.0 message returned by the DS."
+  - name: Supported Versions
+    description: "Provides information on the Supported 3DS versions and Supported functions of the Access Control Server (ACS) and
+      Directory Server (DS) by account number. The Version and 3DS Method URL is determined based on card ranges retrieved from the DS."
+paths:
+  /authentications:
+    post:
+      description: "Provides a channel for the requestor to initiate an authentication transaction and receive a response
+        based on the ARes 3DS 2.0 message returned by the DS."
+      summary: Provides a channel for authentication results or challenge information.
+      tags:
+        - Authentication
+      operationId: authenticate
+      requestBody:
+        $ref: '#/components/requestBodies/AuthenticationsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/AuthenticationsSuccess'
+        '400':
+          $ref: '#/components/responses/AuthenticationsBadRequestError'
+
+  /authentications/{three_ds_server_trans_id}/challenge-results:
+    get:
+      description: "Provides a channel for the requestor to request the final authentication result of a previous challenge transaction by
+        submitting a previous transaction ID. After the 3DS client completes the challenge flow and stores it temporarily, the 3DS Server
+        receives transaction status in an RReq message from the Directory Server."
+      summary: Provides the result of a challenge request.
+      tags:
+        - Authentication
+      operationId: getChallengeResults
+      parameters:
+        - $ref: '#/components/parameters/three_ds_server_trans_id'
+      responses:
+        '200':
+          $ref: '#/components/responses/ChallengeResultsSuccess'
+        '400':
+          $ref: '#/components/responses/ChallengeResultsBadRequestError'
+
+  /supported-versions:
+    post:
+      description: "Provides information on the Supported 3DS versions and Supported functions of the Access Control Server (ACS) and
+        Directory Server (DS) by account number. The Version and 3DS Method URL is determined based on card ranges retrieved from the DS."
+      summary: Provides the supported versions by account number.
+      tags:
+        - Supported Versions
+      operationId: getSupportedVersions
+      requestBody:
+        $ref: '#/components/requestBodies/SupportedVersionsRequest'
+      responses:
+        '200':
+          $ref: '#/components/responses/SupportedVersionsSuccess'
+        '400':
+          $ref: '#/components/responses/SupportedVersionsBadRequestError'
+
+  /authentications/{three_ds_server_trans_id}/abandoned-challenges:
+    put:
+      description: "Provides the 3DS Requestor the ability to notify the Mastercard 3DS Server when a Challenge is being abandoned by
+        the requestor. On receiving the notification, Mastercard 3DS Server will store the Challenge Abandonment details. Once the RReq is received
+        from the Directory Server (DS), 3DS Server will pass the Challenge Abandonment information to the DS in the RRes"
+      summary: Saving the requestor challenge abandonment information.
+      tags:
+        - Authentication
+      operationId: abandonChallenge
+      parameters:
+        - $ref: '#/components/parameters/three_ds_server_trans_id'
+      requestBody:
+        $ref: '#/components/requestBodies/AbandonedChallengesRequest'
+      responses:
+        '204':
+          $ref: '#/components/responses/AbandonedChallengesSuccess'
+        '400':
+          $ref: '#/components/responses/AbandonedChallengesBadRequestError'
+components:
+  schemas:
+    Authentication:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/AuthenticationBase'
+        - oneOf:
+            - $ref: '#/components/schemas/BrowserAuthentication'
+            - $ref: '#/components/schemas/AppAuthentication'
+            - $ref: '#/components/schemas/3RIAuthentication'
+    BrowserAuthentication:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Non3RIAuthentication'
+        - $ref: '#/components/schemas/BrowserAuthenticationBase'
+    AppAuthentication:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Non3RIAuthentication'
+        - $ref: '#/components/schemas/AppAuthenticationBase'
+    AuthenticationBase:
+      type: object
+      required:
+        - threeDSRequestorID
+        - threeDSRequestorName
+        - threeDSRequestorURL
+        - deviceChannel
+        - messageCategory
+      properties:
+        threeDSRequestorPriorAuthenticationInfo:
+          $ref: '#/components/schemas/threeDSRequestorPriorAuthenticationInfo'
+        acctInfo:
+          $ref: '#/components/schemas/acctInfo'
+        homePhone:
+          $ref: '#/components/schemas/homePhone'
+        mobilePhone:
+          $ref: '#/components/schemas/mobilePhone'
+        workPhone:
+          $ref: '#/components/schemas/workPhone'
+        merchantRiskIndicator:
+          $ref: '#/components/schemas/merchantRiskIndicator'
+        threeDSRequestorID:
+          type: string
+          description: "DS assigned the 3DS Requestor identifier. Each DS will provide a unique ID to each 3DS Requestor."
+          example: "MC123456789"
+          maxLength: 35
+          minLength: 1
+        threeDSRequestorName:
+          type: string
+          description: "DS assigned the 3DS Requestor name. Each DS will provide a unique name to each 3DS Requestor."
+          example: "Mastercard 3DS Requestor"
+          maxLength: 40
+          minLength: 1
+        threeDSRequestorURL:
+          type: string
+          description: "Fully qualified URL of the 3DS Requestor website or customer care site. This data element provides additional information to the receiving 3-D Secure system in case a problem arises and provides the contact information."
+          example: "http://www.merchant.com"
+          maxLength: 2048
+          minLength: 1
+        acquirerMerchantID:
+          type: string
+          description: "Acquirer-assigned merchant identifier. This may be the same value that is used in the authorisation requests sent on behalf of the 3DS Requestor and is represented in ISO 8583 format."
+          example: "ACME"
+          maxLength: 35
+          minLength: 1
+        scoreRequest:
+          type: boolean
+          description: "Score request indicator. Score is returned if this is set to true."
+          example: true
+        deviceChannel:
+          type: string
+          description: "Indicates the type of channel interface being used to initiate the transaction. Options: 01, 02, and 03."
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        messageCategory:
+          $ref: '#/components/schemas/messageCategory'
+        encryptedData:
+          $ref: '#/components/schemas/encryptedData'
+        senderConfidence:
+          type: string
+          description: "Indicates the level of confidence the requestor has in the cardholder currently (future use)."
+          example: "20140328"
+          maxLength: 32
+          minLength: 32
+        reasonCode1:
+          type: string
+          description: "This is a reason code that contains information about the Risk Level of the Device. This field is only used if requestor is enrolled in the IDCI 3rd byte program."
+          example: "1"
+          maxLength: 1
+          minLength: 1
+        reasonCode2:
+          type: string
+          description: "This is a reason code that contains information about the Risk Level of the Device (future use)"
+          example: "1"
+          maxLength: 1
+          minLength: 1
+        threeDSRequestorDecMaxTime:
+          type: string
+          description: "Indicates the maximum amount of time that the 3DS Requestor waits for an ACS to provide the results of a Decoupled Authentication transaction (in minutes). Accepted format is numeric values between 1 and 10080."
+          maxLength: 5
+          minLength: 1
+          example: "100"
+        threeDSRequestorDecReqInd:
+          type: string
+          description: "Indicates whether the 3DS Requestor requests the ACS to utilise Decoupled Authentication. If the ACS confirms its use, it agrees to utilise the Decoupled Authentication."
+          example: "Y"
+          maxLength: 1
+          minLength: 1
+        threeDSServerTransID:
+          $ref: '#/components/schemas/threeDSServerTransID'
+        acctType:
+          type: string
+          maxLength: 2
+          minLength: 2
+          description: "Indicates the type of account. For example, for a multi-account card product."
+          example: "01"
+        acquirerBIN:
+          type: string
+          maxLength: 11
+          minLength: 1
+          description: "The acquiring institution identification code as assigned by the DS receiving the AReq message."
+          example: "444444"
+        broadInfo:
+          type: string
+          description: "The unstructured information sent between the 3DS Server, the DS, and the ACS."
+          maxLength: 4096
+          minLength: 1
+          example: "TLS 1.x will be turned off starting summer 2019"
+        cardExpiryDate:
+          type: string
+          description: "The expiry Date of the PAN or token supplied to the 3DS Requestor by the cardholder."
+          example: "2002"
+          maxLength: 4
+          minLength: 4
+        acctID:
+          type: string
+          description: "Additional information about the account that is optionally provided by the 3DS Requestor."
+          example: "personal account"
+          maxLength: 64
+          minLength: 1
+        acctNumber:
+          type: string
+          description: "Additional information about the account that is optionally provided by the 3DS Requestor."
+          example: "5100000000001801"
+          maxLength: 19
+          minLength: 13
+        billAddrCity:
+          type: string
+          description: "The city of the cardholder billing address associated with the card used for this purchase."
+          example: "Anytown"
+          maxLength: 50
+          minLength: 1
+        billAddrCountry:
+          type: string
+          description: "The country of the cardholder billing address associated with the card, used for this purchase. Format: ISO 3166-1."
+          example: "840"
+          maxLength: 3
+          minLength: 3
+        billAddrLine1:
+          type: string
+          description: "The first line of the street address or equivalent local portion of the cardholder billing address associated with the card used for this purchase."
+          example: "123MainStreet"
+          maxLength: 50
+          minLength: 1
+        billAddrLine2:
+          type: string
+          description: "The second line of the street address or equivalent local portion of the cardholder billing address associated with the card used for this purchase."
+          example: "P.O.Box555454"
+          maxLength: 50
+          minLength: 1
+        billAddrLine3:
+          type: string
+          description: "The third line of the street address or equivalent local portion of the cardholder billing address associated with the card used for this purchase."
+          example: "Bill Address"
+          maxLength: 50
+          minLength: 1
+        billAddrPostCode:
+          type: string
+          description: "The ZIP or other postal code of the cardholder billing address associated with the card used for this purchase."
+          example: "63368"
+          maxLength: 16
+          minLength: 1
+        billAddrState:
+          type: string
+          description: "The state or province of the cardholder billing address associated with the card used for this purchase. Format: ISO 3166-2."
+          example: "MO"
+          maxLength: 3
+          minLength: 1
+        email:
+          type: string
+          description: "The email address associated with the account that is either entered by the cardholder or is on file with the 3DS Requestor. Format: IETF RFC 5322 Section 3.4"
+          example: "johndoe@email.com"
+          maxLength: 254
+          minLength: 1
+        cardholderName:
+          type: string
+          description: "Name of the cardholder."
+          example: "JohnDoe"
+          maxLength: 45
+          minLength: 2
+        shipAddrCity:
+          type: string
+          description: "City portion of the shipping address requested by the cardholder."
+          example: "Anytown"
+          maxLength: 50
+          minLength: 1
+        shipAddrCountry:
+          type: string
+          description: "Country of the shipping address requested by the cardholder. Format: ISO 3166-1."
+          example: "840"
+          maxLength: 3
+          minLength: 3
+        shipAddrLine1:
+          type: string
+          description: "The first line of the street address or equivalent local portion of the shipping address requested by the cardholder."
+          example: "123MainStreet"
+          maxLength: 50
+          minLength: 1
+        shipAddrLine2:
+          type: string
+          description: "The second line of the street address or equivalent local portion of the shipping address requested by the cardholder."
+          example: "P.O.Box555454"
+          maxLength: 50
+          minLength: 1
+        shipAddrLine3:
+          type: string
+          description: "The third line of the street address or equivalent local portion of the shipping address requested by the cardholder."
+          example: "Bill Address"
+          maxLength: 50
+          minLength: 1
+        shipAddrPostCode:
+          type: string
+          description: "The ZIP or other postal code of the shipping address requested by the cardholder."
+          example: "63368"
+          maxLength: 16
+          minLength: 1
+        shipAddrState:
+          type: string
+          description: "The state or province of the shipping address associated with the card being used for this purchase. Format: ISO 3166-2."
+          example: "MO"
+          maxLength: 3
+          minLength: 1
+        dsIdentifier:
+          $ref: '#/components/schemas/dsIdentifier'
+        dsTransID:
+          $ref: '#/components/schemas/dsTransID'
+        purchaseInstalData:
+          type: string
+          description: "Indicates the maximum number of authorisations permitted for instalment payments. Format: Variable. Value must be greater than 1."
+          example: "024"
+          maxLength: 3
+          minLength: 1
+        mcc:
+          type: string
+          description: "DS-specific code describing the merchants' type of business, product, or service."
+          example: "0001"
+          maxLength: 4
+          minLength: 4
+        merchantCountryCode:
+          type: string
+          description: "Country code of the merchant that is required for PA. This value correlates to the merchant country code as defined by each Payment System or DS. Format: ISO 3166-1."
+          example: "840"
+          maxLength: 3
+          minLength: 3
+        merchantName:
+          type: string
+          description: "Merchant name assigned by the Acquirer or Payment System that is required for PA."
+          example: "JohnSmith"
+          maxLength: 40
+          minLength: 1
+        messageVersion:
+          $ref: '#/components/schemas/messageVersion'
+        purchaseAmount:
+          type: string
+          description: "Purchase amount in minor units of currency without any punctuations. Proper punctuation can be calculated when it is used in conjunction with the Purchase Currency Exponent field."
+          example: "123456789123"
+          maxLength: 48
+          minLength: 1
+        purchaseCurrency:
+          type: string
+          description: "Currency in which purchase amount is expressed. Format: ISO 4217."
+          example: "840"
+          maxLength: 3
+          minLength: 3
+        purchaseExponent:
+          type: string
+          description: "Minor units of purchase currency as specified in the ISO 4217 currency exponent."
+          example: "2"
+          maxLength: 1
+          minLength: 1
+        purchaseDate:
+          type: string
+          description: "Date and time of the purchase, expressed in UTC. Format: YYYYMMDDHHMMSS."
+          example: "20160101000001"
+          maxLength: 14
+          minLength: 14
+        recurringExpiry:
+          type: string
+          description: "Date after which no further authorisations will be performed. Format: YYYYMMDD."
+          example: "20200202"
+          maxLength: 8
+          minLength: 8
+        recurringFrequency:
+          type: string
+          description: "Indicates the minimum number of days between authorisations."
+          example: "0004"
+          maxLength: 4
+          minLength: 1
+        transType:
+          type: string
+          description: "Identifies the type of transaction being authenticated. This field is required for VISA transactions and accepted values are 01, 03, 10, 11, and 28."
+          pattern: ^(01|03|10|11|28|)$
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        whiteListStatus:
+          $ref: '#/components/schemas/whiteListStatus'
+        whiteListStatusSource:
+          $ref: '#/components/schemas/whiteListStatusSource'
+    BrowserAuthenticationBase:
+      type: object
+      required:
+        - threeDSCompInd
+        - browserAcceptHeader
+        - browserLanguage
+        - browserUserAgent
+        - notificationURL
+      properties:
+        threeDSCompInd:
+          type: string
+          maxLength: 1
+          minLength: 1
+          pattern: '^[Y|N|U]$'
+          description: "Indicates whether the 3DS Method is successfully completed."
+          example: "Y"
+        browserAcceptHeader:
+          type: string
+          description: "Exact content of the HTTP accept headers as sent to the 3DS Requestor from the cardholder's browser."
+          example: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+          maxLength: 2048
+          minLength: 1
+        browserIP:
+          type: string
+          description: "IP address of the browser as returned by the HTTP headers to the 3DS Requestor."
+          example: "192.168.1.11"
+          maxLength: 45
+          minLength: 1
+        browserJavaEnabled:
+          type: boolean
+          description: "Boolean that represents the ability of the cardholder's browser to execute Java. The value is returned from the navigator.javaEnabled property."
+          example: true
+        browserJavascriptEnabled:
+          type: boolean
+          description: "Boolean that represents the ability of the cardholder's browser to execute the JavaScript. Defaults to true if not given for a 2.2 AReq."
+          example: true
+        browserLanguage:
+          type: string
+          description: "Value representing the browser language as defined in IETF BCP47."
+          example: "en"
+          maxLength: 8
+          minLength: 1
+        browserColorDepth:
+          type: string
+          description: "Value representing the bit depth of the colour palette for displaying images, in bits per pixel. It is obtained from the cardholder's browser using the screen.colorDepth property."
+          example: "48"
+          maxLength: 2
+          minLength: 1
+        browserScreenHeight:
+          type: string
+          description: "Total height of the cardholder's screen in pixels. The value is returned from the screen.height property."
+          example: "400"
+          maxLength: 6
+          minLength: 1
+        browserScreenWidth:
+          type: string
+          description: "Total width of the cardholder's screen in pixels. The value is returned from the screen.width property."
+          example: "600"
+          maxLength: 6
+          minLength: 1
+        browserTZ:
+          type: string
+          description: "Time difference-zone offset in minutes between UTC time and the cardholder's browser local time, in minutes. Note: The offset is positive if the local time zone is behind UTC and negative if it is ahead."
+          example: "0"
+          maxLength: 5
+          minLength: 1
+        browserUserAgent:
+          type: string
+          description: "Exact content of the HTTP user-agent header."
+          example: "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"
+          maxLength: 2048
+          minLength: 1
+        challengeWindowSize:
+          type: string
+          description: "Required if generateCReq is present."
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        generateCReq:
+          type: boolean
+          description: "An indicator as to whether the 3DS Server should generate and return a Base64 encoded CReq message to be used to initiate the challenge with the ACS."
+          example: true
+        notificationURL:
+          type: string
+          description: "The fully qualified URL of the system that receives the CRes message or Error Message. The CRes message is posted by the ACS through the cardholder's browser at the end of the challenge and receipt of the RRes message."
+          example: "https://notification.domain.net"
+          maxLength: 256
+          minLength: 1
+    Non3RIAuthentication:
+      type: object
+      required:
+        - threeDSRequestorAuthenticationInd
+      properties:
+        threeDSRequestorAuthenticationInd:
+          type: string
+          description: "Indicates the type of Authentication request. This data element provides additional information to the ACS to determine the best approach for handling an authentication request."
+          pattern: '^(0[1-7])$|^([8-9][0-9])$'
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        threeDSRequestorChallengeInd:
+          type: string
+          description: "Indicates whether a challenge is requested for this transaction. For example, for 01-PA, a 3DS Requestor may have concerns about the transaction, and request a challenge. For 02-NPA, a challenge may be necessary when adding a new card to a wallet."
+          pattern: '^(0[1-4])$|^([8-9][0-9])$'
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        addrMatch:
+          type: string
+          description: "Indicates whether the cardholder shipping address and the cardholder billing address are the same."
+          example: "Y"
+          maxLength: 1
+          minLength: 1
+    3RIAuthentication:
+      type: object
+      required:
+        - threeRIInd
+      properties:
+        threeDSRequestorAuthenticationInfo:
+          $ref: '#/components/schemas/threeDSRequestorAuthenticationInfo'
+        threeRIInd:
+          type: string
+          description: "Indicates the type of 3RI request. This data element provides additional information to the ACS to determine the best approach for handling a 3RI request."
+          example: "0"
+          maxLength: 2
+          minLength: 2
+    AppAuthenticationBase:
+      type: object
+      required:
+        - deviceRenderOptions
+        - sdkAppID
+        - sdkEncData
+        - sdkEphemPubKey
+        - sdkMaxTimeout
+        - sdkReferenceNumber
+        - sdkTransID
+      properties:
+        deviceRenderOptions:
+          $ref: '#/components/schemas/deviceRenderOptions'
+        sdkAppID:
+          type: string
+          description: "Universally unique ID created upon all the installations and updates of the 3DS Requestor App on a Consumer Device. This will be newly generated and stored by the 3DS SDK for each installation or update."
+          example: "d12345e0-67f3-23e5-a151-feff891cdc9f"
+          minLength: 36
+          maxLength: 36
+        sdkEncData:
+          type: string
+          description: "JWE Object containing data encrypted by the SDK for the DS to decrypt. Refer to the EMVCo specification for additional details."
+          example: "eyJhbGciOiJSU0EtT0FFUC0yNTYiLCJlbmMiOiJBMTI4Q0JDLUhTMjU2Iiwia2lkIjoiMmY1ZmE2NGE2NTU2OGVhODk2NDY1M2MzM2Q3YTE2MDMifQ.n323u_F0VIL_6YkSPuNr-ZvwEo5Rc916_jeoOUGU2AfGeGI91pehT5j4cohsWNDvmZQR_KXCt5YFYuDrJr3PeqsqAlJktsOSli5Kq1yKjLYrLpgiCbkSdHBFMsbHK-mSN87yztmVEkhGi6LiZiMvgP3EEPySk_LN8fnjGgpSkGr4IG4oALIZKCTNlyKrbE-PeHrReSNtBGKg3NxAcjQVMUjAi6x_qrSuTsb9Wyssa92z6ABpMTWHuBqdSE6n9EgYDqNRgqOj30japLMNR1cGeHm_opiCRRJWJQplpOAe7mByVrgoBnAIrUXhBZ8haBclJ96hbvmrlCKiRHVmGl3frg.c1SdE2azR9o9S1Uabh73Dw.FtpTSbMzDWNjwtDNyQuKFmu3JT16JXFxgFW2zKzuZXOqJXKpJGgtDyyXkZzN5unKdhytA1fZvMjQBXQmhWZslAA001z3l0vxqC9LpzgQja8MIT-HW1s357NMW-XOXoUSWFDqTfxzC0407LhTGtA__uZRyAixFHFPqruejDbXzRfPhDtY_RpjSIZaWmTcc9til2FhrQdHxm9LSkd8cDMYkvfBoTf6af6V1RZweI-qaOGrdqMWaCMbprjPsf9f88JvOoDCKxWuU_wwHFVytvqGupFV1pAndeY_C98eEpkEXuZ2ZATIiVWFabQ3Ex3aRy1B2aHiWgV7sF_XHrK2tXzDsAdg6okWxNm-BCqVYtKnPFI.vwu2qSqVcWv9wwvQau069A"
+          minLength: 2
+          maxLength: 64000
+        sdkEphemPubKey:
+          type: object
+          description: "Public key component of the ephemeral key pair generated by the 3DS SDK and is used to establish session keys between the 3DS SDK and ACS. Refer to the EMVCo specification for additional details."
+          maxLength: 256
+          properties:
+            kty:
+              type: string
+              description: 'The "kty" (key type) parameter identifies the cryptographic algorithm family used with the key, such as "RSA" or "EC".'
+              example: "EC"
+            crv:
+              type: string
+              description: "Curve parameter of the JWA (RFC 7518) encryption. Identifies the cryptographic curve used with the key."
+              example: "P-256"
+            x:
+              type: string
+              description: "X Coordinate Parameter. An Elliptic Curve public key is represented by a pair of coordinates drawn from a finite field, which together define a point on an Elliptic Curve."
+              example: "WWcpTjbOqiu_1aODllw5rYTq5oLXE_T0huCPjMIRbkI"
+            y:
+              type: string
+              description: "Y Coordinate Parameter. An Elliptic Curve public key is represented by a pair of coordinates drawn from a finite field, which together define a point on an Elliptic Curve."
+              example: "Wz_7anIeadV8SJZUfr4drwjzuWoUbOsHp5GdRZBAAiw"
+        sdkMaxTimeout:
+          type: string
+          description: "Indicates maximum amount of time (in minutes) for all exchanges. Accepted values: Greater than or equal to 05."
+          example: "06"
+          minLength: 2
+          maxLength: 2
+        sdkReferenceNumber:
+          type: string
+          description: "Identifies the vendor and version for the 3DS SDK that is integrated in a 3DS Requestor App, assigned by EMVCo when the 3DS SDK is approved."
+          example: "3DS_LOA_SDK_PPFU_020100_00007"
+          minLength: 2
+          maxLength: 32
+        sdkTransID:
+          $ref: '#/components/schemas/sdkTransID'
+    AuthenticationResult:
+      type: object
+      properties:
+        acsReferenceNumber:
+          type: string
+          description: "Unique identifier assigned by the EMVCo Secretariat upon testing and approval."
+          example: "mcacsreferenceno"
+          maxLength: 32
+          minLength: 1
+        threeDSServerTransID:
+          $ref: '#/components/schemas/threeDSServerTransID'
+        dsTransID:
+          $ref: '#/components/schemas/dsTransID'
+        acsChallengeMandated:
+          type: string
+          description: "Indication of whether a challenge is required for the transaction to be authorised due to local or regional mandates or other variable. Options are Y, N."
+          example: "Y"
+          maxLength: 1
+          minLength: 1
+        acsRenderingType:
+          type: object
+          required:
+            - acsInterface
+            - acsUiTemplate
+          properties:
+            acsInterface:
+              type: string
+              description: "Identifies the ACS interface that presents the challenge to the cardholder. Options are 01, 02."
+              example: "01"
+              maxLength: 2
+              minLength: 2
+            acsUiTemplate:
+              type: string
+              description: "Identifies the UI Template format that the ACS presents to the consumer first. Options are 01, 02, 03, 04, 05."
+              example: "01"
+              maxLength: 2
+              minLength: 2
+        acsSignedContent:
+          type: string
+          description: "Contains the JWS object created by the ACS for the ARes message."
+          example: "validAcsSignedContent"
+          maxLength: 50
+          minLength: 1
+        acsURL:
+          type: string
+          description: "Fully qualified URL of the ACS to be used for the challenge."
+          example: "https://server.acsdomainname.com"
+          maxLength: 2048
+          minLength: 1
+        authenticationValue:
+          $ref: '#/components/schemas/authenticationValue'
+        authenticationType:
+          type: string
+          description: "Indicates the type of authentication method the issuer will use to challenge the cardholder, whether in the ARes message or what was used by the ACS when in the RReq message. Options are 01-99, 05-79: Reserved for future EMVCo use (values invalid until defined by EMVCo)."
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        cardholderInfo:
+          $ref: '#/components/schemas/cardholderInfo'
+        acsOperatorID:
+          type: string
+          description: "DS assigned ACS identifier. Each DS can provide a unique ID to each ACS."
+          example: "MCD-LOA-SRV-JDFH-V201-12345"
+          maxLength: 32
+          minLength: 1
+        whiteListStatusSource:
+          $ref: '#/components/schemas/whiteListStatusSource'
+        whiteListStatus:
+          $ref: '#/components/schemas/whiteListStatus'
+        eci:
+          $ref: '#/components/schemas/eci'
+        sdkTransID:
+          $ref: '#/components/schemas/sdkTransID'
+        transStatus:
+          $ref: '#/components/schemas/transStatus'
+        transStatusReason:
+          $ref: '#/components/schemas/transStatusReason'
+        encodedCReq:
+          type: string
+          description: "Base64 URL encoded CReq message, only returned for challenge transactions during browser flow."
+          example: "eyJ0aHJlZURTU2VydmVyVHJhbnNJRCI6IjNiMDFjZjA1LTY1ZmEtNGI2YS05MTMwLTFlMzU4NTE1M2ZjOSIsImFjc1RyYW5zSUQiOiJkNzkwNTVlMC00NWYzLTExZTUtYTE1MS1mZWZmODE5Y2RjOWYiLCJjaGFsbGVuZ2VXaW5kb3dTaXplIjoiMDMiLCJtZXNzYWdlVHlwZSI6IkNSZXEiLCJtZXNzYWdlVmVyc2lvbiI6IjIuMS4wIn0="
+          maxLength: 50
+          minLength: 2
+        messageExtension:
+          type: array
+          description: "Data necessary to support requirements not otherwise defined in the 3D Secure message are carried in a Message Extension."
+          items:
+            $ref: '#/components/schemas/messageExtensionData'
+        acsTransID:
+          $ref: '#/components/schemas/acsTransID'
+        messageVersion:
+          $ref: '#/components/schemas/messageVersion'
+        acsDecConInd:
+          type: string
+          description: "Indicates whether the ACS confirms utilisation of Decoupled Authentication and agrees to utilise Decoupled Authentication to authenticate the cardholder. Options are Y: Confirms Decoupled Authentication will be utilised, N: Decoupled Authentication will not be utilised."
+          example: "Y"
+          maxLength: 1
+          minLength: 1
+        safekeyXid:
+          $ref: '#/components/schemas/safekeyXid'
+        aiq:
+          $ref: '#/components/schemas/aiqResponseMessage'
+    threeDSServerTransID:
+      type: string
+      description: "Universally unique transaction identifier assigned by the 3DS Server to identify a single transaction."
+      example: "8a880dc0-d2d2-4067-bcb1-b08d1690b26f"
+      maxLength: 36
+      minLength: 36
+    dsTransID:
+      type: string
+      description: "Universally unique transaction identifier assigned by the DS to identify a single transaction. It should be uuid."
+      example: "e5f653c4-4214-4daf-8635-b8499f8820d4"
+      maxLength: 36
+      minLength: 36
+    messageExtensionData:
+      type: object
+      properties:
+        criticalityIndicator:
+          description: "A Boolean value indicating whether the recipient must understand the contents of the extension to interpret the entire message."
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: "The data carried in the extension."
+          maxLength: 8059
+          minLength: 2
+          example: '"123xaa": "extension data"'
+        id:
+          maxLength: 64
+          minLength: 2
+          description: "A unique identifier for the extension. Note: Payment System Registered Application Provider Identifier (RID) is required as the prefix of the ID"
+          type: string
+          example: "tc8Qtm465Ln1FX0nZprA"
+        name:
+          maxLength: 64
+          description: "The name of the extension data set as defined by the extension owner."
+          minLength: 2
+          type: string
+          example: "emvcomsgext"
+    acsTransID:
+      type: string
+      description: "Universally Unique transaction identifier assigned by the ACS to identify a single transaction. Format: uuid."
+      example: "d79055e0-45f3-11e5-a151-feff819cdc9f"
+      maxLength: 36
+      minLength: 36
+    authenticationValue:
+      type: string
+      description: "Payment System-specific value provided by the ACS or the DS using an algorithm defined by Payment System. Authentication Value may be used to provide proof of authentication. Format: Base64 encoded."
+      example: "xgQYYgZVAAAAAAAAAAAAAAAAAAAA"
+      maxLength: 28
+      minLength: 28
+    cardholderInfo:
+      type: string
+      description: "Text provided by the ACS or Issuer to cardholder during a Frictionless transaction, that was not authenticated by the ACS. The issuer can optionally provide information to the cardholder. For example, Additional authentication is needed for this transaction, please contact (Issuer Name) at xxx-xxx-xxxx."
+      example: "cardholderName"
+      maxLength: 128
+      minLength: 1
+    eci:
+      type: string
+      description: "Payment System-specific value provided by the ACS to indicate the results of the attempt to authenticate the cardholder."
+      example: "01"
+      maxLength: 2
+      minLength: 2
+    aiqResponseMessage:
+      type: object
+      properties:
+        notification:
+          type: string
+          description: "Notifications for additional information about AIQ."
+          maxLength: 36
+          minLength: 2
+          example: "Invalid request data. Authentication performed without AIQ."
+      description: "Authentication IQ data provided to Mastercard to improve future frictionless authentication decisions."
+      example:
+        notification: "Invalid request data. Authentication performed without AIQ."
+    safekeyXid:
+      type: string
+      description: "Amex should be XID."
+      example: "02 01 00 00 e5 f6 53 c4 42 14 4d af 86 35 b8 49 9f 88 20 d4"
+      maxLength: 50
+      minLength: 2
+    threeDSRequestorPriorAuthenticationInfo:
+      properties:
+        threeDSReqPriorAuthData:
+          type: string
+          description: "Documents and supports a specific authentication process. In the current version of the specification, this data element is not defined in detail; however, the intention is that for each 3DS Requestor Authentication Method, this field will carry data that the ACS can use to verify the authentication process. In future versions of the specification, these details are expected to be included."
+          example: "cKTYtrvvKU7gUoiqbbO7Po"
+          maxLength: 2048
+          minLength: 1
+        threeDSReqPriorAuthMethod:
+          type: string
+          description: "Mechanism used by the cardholder to previously authenticate to the 3DS Requestor. Options are 01-04, 05-79: Reserved for future EMVCo use, and 80-99: Reserved for future DS use."
+          example: "02"
+          maxLength: 2
+          minLength: 2
+        threeDSReqPriorAuthTimestamp:
+          type: string
+          description: "Date and time in UTC of the prior cardholder authentication. Format: YYYYMMDDHHMM."
+          example: "201710282113"
+          maxLength: 12
+          minLength: 12
+        threeDSReqPriorRef:
+          type: string
+          description: "This data element provides additional information to the ACS to determine the best approach for handing a request."
+          example: "d7c1ee99-9478-44a6-b1f2-391e29c6b340"
+          maxLength: 36
+          minLength: 1
+    homePhone:
+      properties:
+        cc:
+          type: string
+          description: "Country Code of the number."
+          pattern: \\+?\\d*
+          maxLength: 3
+          minLength: 1
+          example: "01"
+        subscriber:
+          type: string
+          description: "Subscriber section of the number."
+          pattern: \\d*
+          maxLength: 15
+          example: "1234567899"
+    mobilePhone:
+      properties:
+        cc:
+          type: string
+          description: "Country Code of the number."
+          pattern: \\+?\\d*
+          example: "01"
+          minLength: 1
+          maxLength: 3
+        subscriber:
+          type: string
+          description: "Subscriber section of the number."
+          pattern: \\d*
+          maxLength: 15
+          example: "1234567899"
+    workPhone:
+      properties:
+        cc:
+          type: string
+          description: "Country Code of the number."
+          pattern: \\+?\\d*
+          example: "01"
+          minLength: 1
+          maxLength: 3
+        subscriber:
+          type: string
+          description: "Subscriber section of the number."
+          pattern: \\d*
+          maxLength: 15
+          example: "1234567899"
+    merchantRiskIndicator:
+      properties:
+        deliveryEmailAddress:
+          type: string
+          description: "The email address to which the merchandise was delivered for Electronic delivery."
+          example: "deliver@email.com"
+          maxLength: 254
+          minLength: 1
+        deliveryTimeframe:
+          type: string
+          description: "Indicates the merchandise delivery timeframe. Options are 01, 02, 03 and 04."
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        giftCardAmount:
+          type: string
+          description: "The purchase amount total of prepaid or gift cards in major units for prepaid or gift card purchase. (For example, USD 123.45 is 123)."
+          example: "337"
+          maxLength: 15
+          minLength: 1
+        giftCardCount:
+          type: string
+          description: "Total count of individual prepaid or gift cards or codes purchased."
+          example: "02"
+          maxLength: 2
+          minLength: 1
+        giftCardCurr:
+          type: string
+          description: "Currency code of the gift card."
+          example: "840"
+          maxLength: 3
+          minLength: 3
+        preOrderDate:
+          type: string
+          description: "The expected date that the merchandise will be available for a pre-ordered purchase. Format: YYYYMMDD."
+          example: "20170519"
+          maxLength: 8
+          minLength: 8
+        preOrderPurchaseInd:
+          type: string
+          description: "Indicates whether cardholder is placing an order for merchandise with a future availability or release date. Options: 01, 02."
+          example: "02"
+          maxLength: 2
+          minLength: 2
+        reorderItemsInd:
+          type: string
+          description: "Indicates whether the cardholder is reordering previously purchased merchandise. Options: 01, 02."
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        shipIndicator:
+          type: string
+          description: "Indicates shipping method chosen for the transaction. Options: 01, 02, 03, 04, 05, 06, 07, 80 and 81."
+          example: "02"
+          maxLength: 2
+          minLength: 2
+    threeDSRequestorAuthenticationInfo:
+      properties:
+        threeDSReqAuthData:
+          type: string
+          description: "Documents and supports a specific authentication process. In the current version of the specification, this data element is not defined in detail; however, the intention is that for each 3DS Requestor Authentication Method, this field carry data that the ACS can use to verify the authentication process."
+          example: "validlogin at UL TS BV"
+          maxLength: 20000
+          minLength: 1
+        threeDSReqAuthMethod:
+          type: string
+          description: "Mechanism used by the cardholder to authenticate to the 3DS Requestor. Options: 01-08, 09-79: Reserved for future EMVCo use, 80-99: Reserved for future DS use."
+          example: "02"
+          maxLength: 2
+          minLength: 2
+        threeDSReqAuthTimestamp:
+          type: string
+          description: "Date and time in UTC of the cardholder authentication. Format: YYYYMMDDHHMM."
+          example: "201711071307"
+          maxLength: 12
+          minLength: 12
+    deviceRenderOptions:
+      properties:
+        sdkInterface:
+          type: string
+          description: "Lists all the SDK Interface types that the device supports for displaying specific challenge user interfaces within the SDK. Values accepted are 01=Native, 02=HTML, 03=Both."
+          example: "01"
+          maxLength: 2
+          minLength: 2
+        sdkUiType:
+          type: array
+          items:
+            type: string
+            maxLength: 2
+            minLength: 2
+          description: "Lists all the UI types that the device supports for displaying specific challenge user interfaces within the SDK. Values accepted are Native UI=01-04; HTML UI=01-05."
+          example: ["01", "02", "03"]
+    acctInfo:
+      description: "Cardholder account information."
+      type: object
+      properties:
+        chAccAgeInd:
+          type: string
+          description: "Length of time that the cardholder had an account with the 3DS requestor. Options: 01,02,03,04 and 05."
+          example: "03"
+          maxLength: 2
+          minLength: 2
+        chAccChange:
+          type: string
+          description: "The last changed date of the cardholder's account with the 3DS Requestor, including Billing or Shipping address, new payment account, or new user added. Format: YYYYMMDD."
+          example: "20160712"
+          maxLength: 8
+          minLength: 8
+        chAccChangeInd:
+          type: string
+          description: "Length of time since the cardholder's account information with the 3DS Requestor was last changed, including Billing or Shipping address, new payment account, or new user added. Options: 01, 02, 03 and 04."
+          example: "04"
+          maxLength: 2
+          minLength: 2
+        chAccDate:
+          type: string
+          description: "Date that the cardholder opened the account with the 3DS Requestor. Format: YYYYMMDD."
+          example: "20140328"
+          maxLength: 8
+          minLength: 8
+        chAccPwChange:
+          type: string
+          description: "Date that cardholder's account with the 3DS Requestor had a password change or account reset. Format: YYYYMMDD."
+          example: "20170328"
+          maxLength: 8
+          minLength: 8
+        chAccPwChangeInd:
+          type: string
+          description: "Length of time since the cardholder's account with the 3DS Requestor had a password change or account reset. Options: 01,02,03, 04 and 05."
+          example: "02"
+          maxLength: 2
+          minLength: 2
+        nbPurchaseAccount:
+          type: string
+          description: "Number of purchases with the cardholder's account during the previous six months."
+          example: "11"
+          maxLength: 4
+          minLength: 1
+        provisionAttemptsDay:
+          type: string
+          description: "Number of Add Card attempts in the last 24 hours."
+          example: "0"
+          maxLength: 3
+          minLength: 1
+        txnActivityDay:
+          type: string
+          description: "Number of transactions for the cardholder's account with the 3DS Requestor across all payment accounts in the previous 24 hours."
+          example: "1"
+          maxLength: 3
+          minLength: 1
+        txnActivityYear:
+          type: string
+          description: "Number of transactions for the cardholder's account with the 3DS Requestor across all payment accounts in the previous year."
+          example: "21"
+          maxLength: 3
+          minLength: 1
+        paymentAccAge:
+          type: string
+          description: "Date on which the payment account was enrolled in the cardholder's account with the 3DS Requestor. Format: YYYYMMDD."
+          example: "20160917"
+          maxLength: 8
+          minLength: 8
+        paymentAccInd:
+          type: string
+          description: "Indicates the length of time that the payment account was enrolled in the cardholder's account with the 3DS Requestor. Options: 01, 02, 03, 04 and 05."
+          example: "04"
+          maxLength: 2
+          minLength: 2
+        shipAddressUsage:
+          type: string
+          description: "Indicates the date when the shipping address was first used with the 3DS Requestor for the transaction. Format: YYYYMMDD."
+          example: "20160714"
+          maxLength: 8
+          minLength: 8
+        shipAddressUsageInd:
+          type: string
+          description: "Indicates when the shipping address used for this transaction was first used with the 3DS Requestor. Options: 01, 02, 03 and 04."
+          example: "04"
+          maxLength: 2
+          minLength: 2
+        shipNameIndicator:
+          type: string
+          description: "Indicates if the cardholder's name on the account is identical to the shipping name used for this transaction. Options: 01=Same, 02=Different."
+          example: "02"
+          maxLength: 2
+          minLength: 1
+        suspiciousAccActivity:
+          type: string
+          description: "Suspicious activity (including previous fraud occurance) indicator on the cardholder account. Options: 01=No Suspicious Activity, 02=Suspicious Activity."
+          example: "01"
+          maxLength: 2
+          minLength: 2
+    acsStartProtocolVersion:
+      type: string
+      description: "The earliest or oldest active protocol version that is supported by the ACS. Refer to the EMVCo specification for additional detail."
+      example: "2.1.0"
+      maxLength: 8
+      minLength: 5
+    messageCategory:
+      type: string
+      description: "Identifies the category of the message for a specific use case. Options: 01, 02, 80, 85 and 86."
+      example: "02"
+      maxLength: 2
+      minLength: 2
+    acsEndProtocolVersion:
+      type: string
+      description: "The most recent active protocol version that is supported for the ACS URL. Refer to the EMVCo specification for additional detail."
+      example: "2.1.0"
+      maxLength: 8
+      minLength: 5
+    threeDSMethodURL:
+      type: string
+      description: "The ACS URL that will be used by the 3DS Method. <br> Note: The 3DSMethodURL data element may be omitted if not supported by the ACS for this specific card range."
+      example: "http://www.mc.com/methodURL_1"
+      maxLength: 256
+      minLength: 2
+    whiteListStatusSource:
+      type: string
+      description: "Source for the whitelist. Possible values are 01: 3DS Server, 02: DS, 03: ACS, 04-79: Reserved for EMVCo future use (values invalid until defined by EMVCo), 80-99: Reserved for DS use."
+      example: "01"
+      maxLength: 2
+      minLength: 2
+    whiteListStatus:
+      type: string
+      description: "Enables the communication of trusted beneficiary/whitelist status between the ACS, the DS and the 3DS Requestor. Options: Y/N."
+      example: "Y"
+      maxLength: 1
+      minLength: 1
+    transStatus:
+      type: string
+      description: "Indicates whether a transaction qualifies as an authenticated transaction or account verification. Options: Y, N, U A, C, R."
+      example: "Y"
+      maxLength: 1
+      minLength: 1
+    transStatusReason:
+      type: string
+      description: "Provides information on why the Transaction Status field has the specified value. Options: 01-99; 22-79 reserved for future EMVCo use."
+      example: "01"
+      maxLength: 2
+      minLength: 2
+    messageVersion:
+      type: string
+      description: "Protocol version number."
+      example: "2.1.0"
+      maxLength: 8
+      minLength: 5
+    sdkTransID:
+      type: string
+      description: "Universally unique transaction identifier assigned by the 3DS SDK to identify a single transaction."
+      example: "d12345e0-67f3-23e5-a151-feff891cdc9f"
+      maxLength: 36
+      minLength: 36
+    dsIdentifier:
+      type: string
+      description: "The identifier of the Directory Server. The possible values include: MASTERCARD, CB, VISA, AMEX, DISCOVER, JCB, and ELO."
+      example: "MASTERCARD"
+      minLength: 2
+      maxLength: 10
+    encryptedData:
+      type: string
+      description: "Encrypted cardholder account. Provided in lieu of 'acctNumber' field. Format is valid JWE object in Base64 format. Note: The account number can be sent in the 'acctNumber' field or can be encrypted and placed in the 'encryptedData' property."
+      maxLength: 64000
+      minLength: 1
+      example: "eyJlbmMiOiJBMTI4R0NNIiwiYWxnIjoiUlNBLU9BRVAtMjU2In0.eC5T3AmlTYO2SLEkBy1fXgtB3liCIOtB8xSCZaaJ6JftLN3YhHDybM4Ulxv27DMm728CROAqnwRy"
+    SupportedVersionsSearch:
+      type: object
+      properties:
+        acctNumber:
+          type: string
+          description: "Account number that will be used in the authentication and authorisation request for payment transactions. Can be represented by a PAN or token. Format: ISO 7812. Note: The account number can be sent in the 'acctNumber' field or can be encrypted and placed in the 'encryptedData' property."
+          example: "5000100000001001000"
+          maxLength: 19
+          minLength: 13
+        encryptedData:
+          $ref: '#/components/schemas/encryptedData'
+    AbandonedChallenge:
+      type: object
+      properties:
+        abandonReasonCode:
+          description: "Indicates the reason to abandon a challenged transaction from the ACS. Reason codes can be 01: Low Risk, 02: Market Adoption"
+          type: string
+          maxLength: 2
+          minLength: 2
+          example: "02"
+    SupportedVersion:
+      type: object
+      properties:
+        threeDSServerTransID:
+          $ref: '#/components/schemas/threeDSServerTransID'
+        acsStartProtocolVersion:
+          $ref: '#/components/schemas/acsStartProtocolVersion'
+        acsEndProtocolVersion:
+          $ref: '#/components/schemas/acsEndProtocolVersion'
+        threeDSServerStartVersion:
+          $ref: '#/components/schemas/threeDSServerStartVersion'
+        threeDSServerEndVersion:
+          $ref: '#/components/schemas/threeDSServerEndVersion'
+        threeDSMethodURL:
+          $ref: '#/components/schemas/threeDSMethodURL'
+        dsStartProtocolVersion:
+          $ref: '#/components/schemas/dsStartProtocolVersion'
+        dsEndProtocolVersion:
+          $ref: '#/components/schemas/dsEndProtocolVersion'
+        acsInfoInd:
+          $ref: '#/components/schemas/acsInfoInd'
+        directoryServerID:
+          type: string
+          description: "Registered Application Provider Identifier (RID) that is unique to the Payment System. RIDs are defined by the ISO 7816-5 standard. Format: Alphanumeric."
+          example: "A000000004"
+          maxLength: 10
+          minLength: 10
+        dsIdentifier:
+          $ref: '#/components/schemas/dsIdentifier'
+    ChallengeResult:
+      type: object
+      properties:
+        threeDSServerTransID:
+          $ref: '#/components/schemas/threeDSServerTransID'
+        transStatus:
+          $ref: '#/components/schemas/transStatus'
+        transStatusReason:
+          $ref: '#/components/schemas/transStatusReason'
+        authenticationValue:
+          $ref: '#/components/schemas/authenticationValue'
+        eci:
+          $ref: '#/components/schemas/eci'
+        challengeCancel:
+          type: string
+          description: "Indicator informing the ACS and the DS that the authentication has been cancelled. Options: 01, 04-08, 09-79: Reserved for future EMVCo use, 80-99: Reserved for future DS use."
+          maxLength: 2
+          minLength: 2
+          example: "01"
+        interactionCounter:
+          type: string
+          description: "Indicates the number of authentication cycles attempted by the cardholder."
+          maxLength: 2
+          minLength: 2
+          example: "02"
+        messageCategory:
+          $ref: '#/components/schemas/messageCategory'
+        messageExtension:
+          type: array
+          description: "Data necessary to support requirements not otherwise defined in the 3D Secure message are carried in a Message Extension."
+          items:
+            $ref: '#/components/schemas/messageExtensionData'
+        acsTransID:
+          $ref: '#/components/schemas/acsTransID'
+        dsTransID:
+          $ref: '#/components/schemas/dsTransID'
+        safekeyXid:
+          $ref: '#/components/schemas/safekeyXid'
+        messageVersion:
+          $ref: '#/components/schemas/messageVersion'
+    dsEndProtocolVersion:
+      type: string
+      description: "The most recent active protocol version that is supported by the DS."
+      example: "2.1.0"
+      maxLength: 8
+      minLength: 5
+    dsStartProtocolVersion:
+      type: string
+      description: "The earliest or oldest active protocol version that is supported by the DS."
+      example: "2.1.0"
+      maxLength: 8
+      minLength: 5
+    acsInfoInd:
+      minItems: 1
+      type: array
+      description: "Provides additional information to the 3DS Server."
+      items:
+        type: string
+        maxLength: 2
+        minLength: 2
+        example: "01"
+    Error:
+      type: object
+      required:
+        - errorCode
+        - errorComponent
+        - errorDescription
+        - errorDetail
+        - threeDSServerTransID
+      properties:
+        errorCode:
+          type: string
+          description: "Code indicating the type of problem identified in the message. Refer to the EMVCo specification for additional detail."
+          maxLength: 4
+          minLength: 4
+          example: "4100"
+        errorComponent:
+          type: string
+          description: "Code indicating the 3-D Secure component that identified the error. Options: C=3DS SDK, S=3DS Server, D=DS, A=ACS."
+          maxLength: 1
+          minLength: 1
+          example: "D"
+        errorDescription:
+          type: string
+          description: "Text describing the problem identified in the message."
+          maxLength: 2048
+          minLength: 1
+          example: "Format of one or more elements is invalid according to the specification."
+        errorDetail:
+          type: string
+          description: "Additional detail regarding the problem identified in the message."
+          maxLength: 2048
+          minLength: 1
+          example: "transStatus"
+        threeDSServerTransID:
+          $ref: '#/components/schemas/threeDSServerTransID'
+      description: "Processing error information."
+    threeDSServerStartVersion:
+      type: string
+      description: "The most recent active MI Server API version."
+      example: "v1"
+      maxLength: 2
+      minLength: 2
+    threeDSServerEndVersion:
+      type: string
+      description: "The earliest or oldest active MI Server API version."
+      example: "v1"
+      maxLength: 2
+      minLength: 2
+  responses:
+    AuthenticationsSuccess:
+      description: "Authentication request processed successfully by the server."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthenticationResult'
+    AuthenticationsBadRequestError:
+      description: |
+        The server is unable to process the request due to one of the below reasons:
+        * Invalid Data
+        * Invalid JSON
+        * Invalid Content-Type
+        * Requestor not onboarded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    ChallengeResultsSuccess:
+      description: "Results of challenge transactions retrieved successfully by the server."
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ChallengeResult'
+    ChallengeResultsBadRequestError:
+      description: |
+        The server is unable to process the request due to one of the below reasons:
+        * Invalid Data
+        * Invalid JSON
+        * Invalid Content-Type
+        * Requestor not onboarded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    SupportedVersionsSuccess:
+      description: "Supported versions of account number retrieved successfully by the server."
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/SupportedVersion'
+    SupportedVersionsBadRequestError:
+      description: |
+        The server is unable to process the request due to one of the below reasons:
+        * Invalid Data
+        * Invalid JSON
+        * Invalid Content-Type
+        * Requestor not onboarded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    AbandonedChallengesSuccess:
+      description: "Challenge abandonment information saved successfully by the server."
+    AbandonedChallengesBadRequestError:
+      description: |
+        The server is unable to process the request due to one of the below reasons:
+        * Invalid Data
+        * Invalid JSON
+        * Invalid Content-Type
+        * Requestor not onboarded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+  requestBodies:
+    AuthenticationsRequest:
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Authentication'
+    SupportedVersionsRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SupportedVersionsSearch'
+      required: true
+    AbandonedChallengesRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AbandonedChallenge'
+      required: false
+  parameters:
+    three_ds_server_trans_id:
+      in: path
+      name: three_ds_server_trans_id
+      required: true
+      schema:
+        type: string
+        minLength: 36
+        maxLength: 36
+      description: "Universally unique transaction identifier assigned by the 3DS Server to identify a single transaction."
+      example: "2c0743c0-fe6a-41a6-88c4-2c94786fb9c2"
