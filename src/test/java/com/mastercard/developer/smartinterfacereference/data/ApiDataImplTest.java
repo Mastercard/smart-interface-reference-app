@@ -49,6 +49,12 @@ class ApiDataImplTest {
     }
 
     @Test
+    void getAuthenticationDecoupledChallenge_parsesJson() {
+        Authentication authentication = apiData.getAuthenticationDecoupledChallenge();
+        assertEquals("01", authentication.getDeviceChannel());
+    }
+
+    @Test
     void getAuthenticationAbandonedChallenge_parsesJson() {
         Authentication authentication = apiData.getAuthenticationAbandonedChallenge();
         assertEquals("02", authentication.getDeviceChannel());
