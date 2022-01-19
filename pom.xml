@@ -26,6 +26,7 @@
 		<client-encryption-version>1.7.1</client-encryption-version>
 		<sonar.organization>mastercard</sonar.organization>
 		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
+		<jacoco.version>0.8.6</jacoco.version>
 	</properties>
 
 	<dependencies>
@@ -126,6 +127,43 @@
 								<verbose>true</verbose>
 							</configOptions>
 						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>${jacoco.version}</version>
+				<configuration>
+					<excludes>
+						<exclude>com.mastercard.developers.carbontracker.CarbonTrackerApplication</exclude>
+						<exclude>
+							com.mastercard.developers.carbontracker.configuration.ApiConfiguration
+						</exclude>
+						<exclude>
+							com.mastercard.developers.carbontracker.exception.ServiceException
+						</exclude>
+						<exclude>
+							com.mastercard.developers.carbontracker.util.*
+						</exclude>
+						<exclude>
+							com.mastercard.developers.carbontracker.usecases.*
+						</exclude>
+					</excludes>
+				</configuration>
+				<executions>
+					<execution>
+						<id>default-prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+					</execution>
+					<execution>
+						<id>jacoco-site</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>report</goal>
+						</goals>
 					</execution>
 				</executions>
 			</plugin>
