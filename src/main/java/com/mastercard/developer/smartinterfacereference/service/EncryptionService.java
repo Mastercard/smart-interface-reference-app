@@ -67,7 +67,7 @@ public class EncryptionService {
         }
     }
 
-    private static class EncryptionException extends RuntimeException {
+    static class EncryptionException extends RuntimeException {
         public EncryptionException(String msg, Exception e) {
             super(msg, e);
         }
