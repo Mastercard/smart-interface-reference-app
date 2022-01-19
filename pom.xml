@@ -24,6 +24,8 @@
 		<code-findbugs.version>3.0.2</code-findbugs.version>
 		<gson-fire.version>1.8.4</gson-fire.version>
 		<client-encryption-version>1.7.1</client-encryption-version>
+		<sonar.organization>mastercard</sonar.organization>
+		<sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
 
 	<dependencies>
