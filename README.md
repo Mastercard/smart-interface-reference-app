@@ -1,4 +1,8 @@
 # 3DS Smart Interface Reference Application
+[![](https://sonarcloud.io/api/project_badges/measure?project=Mastercard_smart-interface-reference-app&metric=alert_status)](https://sonarcloud.io/dashboard?id=Mastercard_smart-interface-reference-app)
+[![](https://sonarcloud.io/api/project_badges/measure?project=Mastercard_smart-interface-reference-app&metric=coverage)](https://sonarcloud.io/dashboard?id=Mastercard_smart-interface-reference-app)
+[![](https://sonarcloud.io/api/project_badges/measure?project=Mastercard_client-encryption-ruby&metric=vulnerabilities)](https://sonarcloud.io/dashboard?id=Mastercard_smart-interface-reference-app)
+[![](https://img.shields.io/badge/license-MIT-yellow.svg)](https://github.com/Mastercard/smart-interface-reference-app/blob/master/LICENSE)
 - [Overview <a name="overview"></a>](#overview-a-nameoverviewa)
   * [Compatibility <a name="compatibility"></a>](#compatibility-a-namecompatibilitya)
 - [Usage <a name="usage"></a>](#usage-a-nameusagea)
