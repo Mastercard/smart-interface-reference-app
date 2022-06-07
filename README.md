@@ -60,7 +60,7 @@ This reference application helps to demo to the Merchants/Requestor on how they 
 * Example:
 
 ```
-si:git push 
+si:
   base-path: 
   auth:
     keyStore: /security/your-keystore.p12
