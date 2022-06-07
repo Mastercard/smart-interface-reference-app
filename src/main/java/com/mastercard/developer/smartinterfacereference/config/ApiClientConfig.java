@@ -73,16 +73,9 @@ public class ApiClientConfig {
     }
 
     @Bean
-    X509TrustManager x509TrustManager(@Value("${si.auth.keyStore}") String keyStoreLoc,
-                                      @Value("${si.auth.keyStore-password}") String keyStorePassword) throws GeneralSecurityException , IOException {
-        if (keyStoreLoc.isBlank() || keyStorePassword.isBlank()) {
-            return null;
-        }
-
-        KeyStore keyStore = keyStore(keyStoreLoc, keyStorePassword.toCharArray());
-
+    X509TrustManager x509TrustManager() throws GeneralSecurityException {
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-        trustManagerFactory.init(keyStore);
+        trustManagerFactory.init((KeyStore) null);
 
         for(TrustManager trustManager : trustManagerFactory.getTrustManagers()) {
             if (trustManager instanceof X509TrustManager) {
@@ -95,9 +88,11 @@ public class ApiClientConfig {
 
     private KeyStore keyStore(String file, char[] password) throws GeneralSecurityException, IOException {
         KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+
         try (InputStream in = ApiClientConfig.class.getResourceAsStream(file)) {
             keyStore.load(in, password);
         }
+
         return keyStore;
     }
 
