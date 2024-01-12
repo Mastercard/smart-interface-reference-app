@@ -54,7 +54,7 @@ This reference application helps to demo to the Merchants/Requestor on how they 
 * Update the following keys in `application.yml` file.
     - `si.auth.keystore`: Path where you saved your keystore. Ex: `/security/your-keystore.p12`
     - `si.auth.keystore-password`: The password to your keystore
-    - `si.auth.keystore-type`: The type to your keystore, default is set to jks. Ex: `keyStore-type: pkcs12`
+    - `si.auth.keystore-type`: The type to your keystore. Ex: `keyStore-type: pkcs12`
     - `app.encryption.enabled`: Set to true if you want to encrypt the `acctNumber` field and want to run the related scenario, false otherwise
     - `app.encryption.cert`: Path where you saved the cert used for PAN Encryption. Ex: `/encryption/your-encryption-cert.crt`
 
