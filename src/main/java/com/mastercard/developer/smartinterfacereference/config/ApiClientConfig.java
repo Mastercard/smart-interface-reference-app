@@ -48,13 +48,14 @@ public class ApiClientConfig {
     @Bean
     SSLSocketFactory sslSocketFactory(@Value("${si.auth.keyStore}") String keyStoreLoc,
                                       @Value("${si.auth.keyStore-password}") String keyStorePassword,
+                                      @Value("${si.auth.keyStore-type}") String keyStoreType,
                                       Optional<X509TrustManager> trustManager) throws GeneralSecurityException , IOException {
 
         if (keyStoreLoc.isBlank() || keyStorePassword.isBlank()) {
             return null;
         }
 
-        KeyStore keyStore = keyStore(keyStoreLoc, keyStorePassword.toCharArray());
+        KeyStore keyStore = keyStore(keyStoreLoc, keyStorePassword.toCharArray(),keyStoreType);
 
         TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
         trustManagerFactory.init(keyStore);
@@ -86,8 +87,8 @@ public class ApiClientConfig {
         return null;
     }
 
-    private KeyStore keyStore(String file, char[] password) throws GeneralSecurityException, IOException {
-        KeyStore keyStore = KeyStore.getInstance(KeyStore.getDefaultType());
+    private KeyStore keyStore(String file, char[] password, String keyStoreType) throws GeneralSecurityException, IOException {
+        KeyStore keyStore = KeyStore.getInstance(keyStoreType);
 
         try (InputStream in = ApiClientConfig.class.getResourceAsStream(file)) {
             keyStore.load(in, password);

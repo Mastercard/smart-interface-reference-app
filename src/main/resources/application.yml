@@ -11,6 +11,7 @@ si:
   auth:
     keyStore:
     keyStore-password:
+    keyStore-type:
 
 app:
   encryption:
