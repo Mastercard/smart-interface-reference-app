@@ -18,7 +18,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.slf4j.Logger;
+import org.springframework.test.util.ReflectionTestUtils;
+import sun.misc.Unsafe;
 
+import java.lang.reflect.Field;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -48,10 +52,24 @@ class SmartInterfaceIntegrationServiceTest {
     private static final String THREE_DS_SERVER_TRANS_ID = "12345";
     private SmartInterfaceIntegrationService integrationService;
 
+    @Mock
+    Logger mockLogger;
+
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         ApiHelper apiHelper = new ApiHelperImpl(objectMapper, authenticationApi, supportedVersionsApi);
         integrationService = new SmartInterfaceIntegrationService(apiHelper, apiData, encryptionService);
+        // Set the logger using ReflectionTestUtils
+        setFinalStatic(SmartInterfaceIntegrationService.class.getDeclaredField("LOGGER"), mockLogger);
+    }
+
+    static void setFinalStatic(Field field, Object newValue) throws Exception{
+        final Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+        unsafeField.setAccessible(true);
+        Unsafe unsafe = (Unsafe)unsafeField.get(null);
+        Object fieldBase = unsafe.staticFieldBase(field);
+        long fieldOffset = unsafe.staticFieldOffset(field);
+        unsafe.putObject(fieldBase, fieldOffset, newValue);
     }
 
     @Test
@@ -344,4 +362,34 @@ class SmartInterfaceIntegrationServiceTest {
         verify(authenticationApi).authenticate(authenticationCaptor.capture());
         assertEquals("12345", authenticationCaptor.getValue().getThreeDSServerTransID());
     }
+
+    @Test
+    void executeAbandonedChallengeFlow_WhenNoChallenge_ShouldLogError() throws ApiException {
+        SupportedVersion supportedVersion = new SupportedVersion().threeDSServerTransID(THREE_DS_SERVER_TRANS_ID);
+        Authentication authentication = new Authentication();
+        AuthenticationResult authenticationResult = new AuthenticationResult();
+        authenticationResult.setTransStatus("Y"); // Authentication successful, no challenge needed
+
+        when(apiData.getAuthenticationAbandonedChallenge()).thenReturn(authentication);
+        when(supportedVersionsApi.getSupportedVersions(any(SupportedVersionsSearch.class))).thenReturn(List.of(supportedVersion));
+        when(authenticationApi.authenticate(any(Authentication.class))).thenReturn(authenticationResult);
+
+        integrationService.executeAbandonedChallengeFlow();
+
+        verify(mockLogger).error("Flow was not a challenge flow. No challenge was abandoned.");
+    }
+
+    @Test
+    void processAuthenticationResult_whenNotAuthenticated_shouldLogNotAuthenticatedMessage() {
+
+        AuthenticationResult authenticationResult = new AuthenticationResult();
+        String notAuthenticatedStatus = "N";
+        authenticationResult.setTransStatus(notAuthenticatedStatus);
+
+        ReflectionTestUtils.invokeMethod(integrationService, "processAuthenticationResult", authenticationResult);
+
+        verify(mockLogger).info("Received transStatus [{}]. NOT Authenticated!", notAuthenticatedStatus);
+    }
+
+
 }
